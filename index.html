@@ -219,6 +219,35 @@
       background: #fef0ef;
     }
 
+    /* ===== ドラッグハンドル ===== */
+    .todo-item__handle {
+      flex-shrink: 0;
+      width: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      color: #ccc;
+      font-size: 1rem;
+      user-select: none;
+      margin-top: 4px;
+    }
+
+    .todo-item__handle:hover {
+      color: #999;
+    }
+
+    .todo-item__handle:active {
+      cursor: grabbing;
+    }
+
+    /* ドラッグ中のプレースホルダー */
+    .todo-item--drag-over {
+      border-top: 2px solid #3498db;
+    }
+
+    /* ドラッグ中の項目を半透明に（JSで付与・解除） */
+
     /* ===== 期限日インライン編集 ===== */
     .todo-item__due-editor {
       display: inline-flex;
@@ -411,15 +440,13 @@
         return;
       }
 
-      // 新しい順にソートして描画
-      const sorted = [...items].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      // ドラッグ順を保持するためソートしない（items の配列順のまま描画）
 
-      listEl.innerHTML = sorted
+      listEl.innerHTML = items
         .map(
           (item) => `
-        <li class="todo-item" data-id="${item.id}">
+        <li class="todo-item" data-id="${item.id}" draggable="true">
+          <div class="todo-item__handle" title="ドラッグして並び替え">⋮⋮</div>
           <input
             type="checkbox"
             class="todo-item__checkbox"
@@ -500,6 +527,9 @@
         clearError();
       }
     });
+
+    // ===== ドラッグ＆ドロップ状態 =====
+    let draggedId = null;
 
     /** リストのイベント委譲（完了切替・削除・期限日編集） */
     listEl.addEventListener('click', (e) => {
@@ -588,6 +618,72 @@
         render();
         return;
       }
+    });
+
+    /** ドラッグ開始 */
+    listEl.addEventListener('dragstart', (e) => {
+      const li = e.target.closest('.todo-item');
+      if (!li || !li.draggable) return;
+      draggedId = li.dataset.id;
+      // ドラッグ中のスタイルを項目に付与
+      li.style.opacity = '0.5';
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedId);
+    });
+
+    /** ドラッグ終了 */
+    listEl.addEventListener('dragend', (e) => {
+      const li = e.target.closest('.todo-item');
+      if (li) li.style.opacity = '';
+      // 全項目のプレースホルダーを削除
+      document.querySelectorAll('.todo-item--drag-over').forEach((el) => {
+        el.classList.remove('todo-item--drag-over');
+      });
+      draggedId = null;
+    });
+
+    /** ドラッグオーバー（上に乗っている間、毎フレーム発火） */
+    listEl.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+
+      const li = e.target.closest('.todo-item');
+      if (!li || !li.draggable) return;
+
+      // 自分自身にはプレースホルダーを立てない
+      if (li.dataset.id === draggedId) return;
+
+      // 既存のプレースホルダーを全項目から外す
+      document.querySelectorAll('.todo-item--drag-over').forEach((el) => {
+        el.classList.remove('todo-item--drag-over');
+      });
+
+      li.classList.add('todo-item--drag-over');
+    });
+
+    /** ドロップ */
+    listEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const targetId = e.dataTransfer.getData('text/plain');
+      if (!targetId) return;
+
+      const items = loadTodos();
+      const fromIndex = items.findIndex((todo) => todo.id === targetId);
+      if (fromIndex === -1) return;
+
+      // ドロップ先の項目を取得
+      const li = e.target.closest('.todo-item');
+      if (!li || !li.draggable) return;
+
+      const toId = li.dataset.id;
+      const toIndex = items.findIndex((todo) => todo.id === toId);
+      if (toIndex === -1 || fromIndex === toIndex) return;
+
+      // 配列から削除して再挿入
+      const [moved] = items.splice(fromIndex, 1);
+      items.splice(toIndex, 0, moved);
+      saveTodos(items);
+      render();
     });
 
     // ===== 初期化 =====
