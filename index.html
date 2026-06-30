@@ -82,6 +82,22 @@
       border-color: #e74c3c;
     }
 
+    .todo-form__date {
+      width: 100%;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+      color: #555;
+      font-family: inherit;
+    }
+
+    .todo-form__date:focus {
+      border-color: #3498db;
+    }
+
     .todo-form__error {
       font-size: 0.8rem;
       color: #e74c3c;
@@ -171,6 +187,17 @@
       margin-top: 2px;
     }
 
+    .todo-item__due {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-top: 1px;
+    }
+
+    .todo-item__due--overdue {
+      color: #e74c3c;
+      font-weight: 600;
+    }
+
     .todo-item__delete {
       flex-shrink: 0;
       width: 32px;
@@ -234,6 +261,12 @@
           placeholder="やることを入力してください…"
           autocomplete="off"
         />
+        <label for="todoDueDate" class="todo-form__label">期限日（任意）</label>
+        <input
+          type="date"
+          id="todoDueDate"
+          class="todo-form__date"
+        />
         <span class="todo-form__error" id="errorMessage" role="alert" aria-live="polite"></span>
       </div>
       <button type="submit" class="todo-form__submit" aria-label="追加">
@@ -253,6 +286,7 @@
     // ===== DOM 参照 =====
     const form = document.getElementById('todoForm');
     const input = document.getElementById('todoInput');
+    const dueDateInput = document.getElementById('todoDueDate');
     const errorEl = document.getElementById('errorMessage');
     const listEl = document.getElementById('todoList');
 
@@ -293,11 +327,12 @@
     }
 
     /** 新しいToDoを作成する */
-    function createTodo(text) {
+    function createTodo(text, dueDate) {
       return {
         id: generateId(),
         text: text.trim(),
         done: false,
+        dueDate: dueDate || '',
         createdAt: new Date().toISOString(),
       };
     }
@@ -318,6 +353,21 @@
       } catch {
         return '';
       }
+    }
+
+    /** 期限日を表示用に整形する */
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-');
+      return `${y}/${m}/${d}`;
+    }
+
+    /** 期限切れかどうかを判定する */
+    function isOverdue(dueDate, done) {
+      if (!dueDate || done) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return new Date(dueDate + 'T00:00:00') < today;
     }
 
     /** ToDoリストを画面に描画する */
@@ -350,6 +400,7 @@
               ${escapeHtml(item.text)}
             </div>
             <div class="todo-item__time">${formatTime(item.createdAt)}</div>
+            ${item.dueDate ? `<div class="todo-item__due ${isOverdue(item.dueDate, item.done) ? 'todo-item__due--overdue' : ''}">📅 期限: ${formatDate(item.dueDate)}${isOverdue(item.dueDate, item.done) ? ' ⚠️ 期限切れ' : ''}</div>` : ''}
           </div>
           <button
             class="todo-item__delete"
@@ -391,6 +442,7 @@
       clearError();
 
       const text = input.value;
+      const dueDate = dueDateInput.value;
 
       // 空文字列は拒否
       if (!text.trim()) {
@@ -400,11 +452,12 @@
       }
 
       const items = loadTodos();
-      items.push(createTodo(text));
+      items.push(createTodo(text, dueDate));
       saveTodos(items);
       render();
 
       input.value = '';
+      dueDateInput.value = '';
       input.focus();
     });
 
