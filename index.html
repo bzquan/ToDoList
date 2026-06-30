@@ -219,6 +219,37 @@
       background: #fef0ef;
     }
 
+    /* ===== 期限日インライン編集 ===== */
+    .todo-item__due-editor {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .todo-item__due-input {
+      padding: 2px 6px;
+      font-size: 0.75rem;
+      border: 1px solid #3498db;
+      border-radius: 4px;
+      outline: none;
+      font-family: inherit;
+      color: #333;
+    }
+
+    .todo-item__due-save {
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .todo-item__due-save:hover {
+      background: #2980b9;
+    }
+
     /* ===== レスポンシブ ===== */
     @media (max-width: 480px) {
       body {
@@ -400,7 +431,9 @@
               ${escapeHtml(item.text)}
             </div>
             <div class="todo-item__time">${formatTime(item.createdAt)}</div>
-            ${item.dueDate ? `<div class="todo-item__due ${isOverdue(item.dueDate, item.done) ? 'todo-item__due--overdue' : ''}">📅 期限: ${formatDate(item.dueDate)}${isOverdue(item.dueDate, item.done) ? ' ⚠️ 期限切れ' : ''}</div>` : ''}
+            ${item.dueDate
+              ? `<div class="todo-item__due ${isOverdue(item.dueDate, item.done) ? 'todo-item__due--overdue' : ''}" data-editable-due="${item.id}">📅 期限: ${formatDate(item.dueDate)}${isOverdue(item.dueDate, item.done) ? ' ⚠️ 期限切れ' : ''}</div>`
+              : `<div class="todo-item__due" data-editable-due="${item.id}" style="cursor:pointer;color:#3498db;">📅 期限設定</div>`}
           </div>
           <button
             class="todo-item__delete"
@@ -468,9 +501,64 @@
       }
     });
 
-    /** リストのイベント委譲（完了切替・削除） */
+    /** リストのイベント委譲（完了切替・削除・期限日編集） */
     listEl.addEventListener('click', (e) => {
       const items = loadTodos();
+
+      // 期限日テキストの場合 → インライン入力に切り替え
+      if (e.target.matches('[data-editable-due]') || e.target.closest('[data-editable-due]')) {
+        const li = e.target.closest('.todo-item');
+        const id = li.dataset.id;
+        const item = items.find((todo) => todo.id === id);
+        if (!item) return;
+
+        // すでに編集モードなら何もしない（二重切り替え防止）
+        if (li.querySelector('.todo-item__due-input')) return;
+
+        const dueEl = li.querySelector('[data-editable-due]');
+        dueEl.removeAttribute('data-editable-due');
+        dueEl.innerHTML = `📅 期限: <input type="date" class="todo-item__due-input" value="${item.dueDate}" /> <button class="todo-item__due-save">保存</button>`;
+
+        const input = li.querySelector('.todo-item__due-input');
+        const saveBtn = li.querySelector('.todo-item__due-save');
+
+        // 保存処理
+        function saveDueDate() {
+          const newItem = items.find((t) => t.id === id);
+          if (!newItem) return;
+          newItem.dueDate = input.value || '';
+          saveTodos(items);
+          render();
+        }
+
+        // ボタンクリック → 保存
+        saveBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          saveDueDate();
+        });
+
+        // Enter キー → 保存
+        input.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            ev.stopPropagation();
+            saveDueDate();
+          }
+        });
+
+        // フォーカス外れ → 保存（空の場合は削除）
+        input.addEventListener('blur', () => {
+          setTimeout(() => {
+            if (!li.contains(document.activeElement)) {
+              saveDueDate();
+            }
+          }, 100);
+        });
+
+        // フォーカスを当てる
+        input.focus();
+        return;
+      }
 
       // チェックボックスの場合 → 完了/未完了のトグル
       if (e.target.matches('.todo-item__checkbox')) {
