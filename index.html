@@ -98,6 +98,25 @@
       border-color: #3498db;
     }
 
+    .todo-form__textarea {
+      width: 100%;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+      min-height: 36px;
+      max-height: 150px;
+      font-family: inherit;
+      color: #555;
+    }
+
+    .todo-form__textarea:focus {
+      border-color: #3498db;
+    }
+
     .todo-form__error {
       font-size: 0.8rem;
       color: #e74c3c;
@@ -313,14 +332,21 @@
     <!-- 入力フォーム -->
     <form class="todo-form" id="todoForm" aria-label="新しいToDoの追加">
       <div class="todo-form__input-wrapper">
-        <label for="todoInput" class="todo-form__label">新しいToDoを入力</label>
+        <label for="todoTitle" class="todo-form__label">タイトル</label>
         <input
           type="text"
-          id="todoInput"
+          id="todoTitle"
           class="todo-form__input"
           placeholder="やることを入力してください…"
           autocomplete="off"
         />
+        <label for="todoDescription" class="todo-form__label">詳細（任意）</label>
+        <textarea
+          id="todoDescription"
+          class="todo-form__textarea"
+          rows="2"
+          placeholder="詳細を入力してください…"
+        ></textarea>
         <label for="todoDueDate" class="todo-form__label">期限日（任意）</label>
         <input
           type="date"
@@ -345,7 +371,8 @@
 
     // ===== DOM 参照 =====
     const form = document.getElementById('todoForm');
-    const input = document.getElementById('todoInput');
+    const titleInput = document.getElementById('todoTitle');
+    const descriptionInput = document.getElementById('todoDescription');
     const dueDateInput = document.getElementById('todoDueDate');
     const errorEl = document.getElementById('errorMessage');
     const listEl = document.getElementById('todoList');
@@ -387,10 +414,11 @@
     }
 
     /** 新しいToDoを作成する */
-    function createTodo(text, dueDate) {
+    function createTodo(title, description, dueDate) {
       return {
         id: generateId(),
-        text: text.trim(),
+        title: title.trim(),
+        description: (description || '').trim(),
         done: false,
         dueDate: dueDate || '',
         createdAt: new Date().toISOString(),
@@ -455,8 +483,9 @@
           />
           <div class="todo-item__body">
             <div class="todo-item__text ${item.done ? 'todo-item__text--done' : ''}">
-              ${escapeHtml(item.text)}
+              ${escapeHtml(item.title)}
             </div>
+            ${item.description ? `<div class="todo-item__description ${item.done ? 'todo-item__text--done' : ''}" style="font-size:0.85rem;color:#666;margin-top:2px;">${escapeHtml(item.description)}</div>` : ''}
             <div class="todo-item__time">${formatTime(item.createdAt)}</div>
             ${item.dueDate
               ? `<div class="todo-item__due ${isOverdue(item.dueDate, item.done) ? 'todo-item__due--overdue' : ''}" data-editable-due="${item.id}">📅 期限: ${formatDate(item.dueDate)}${isOverdue(item.dueDate, item.done) ? ' ⚠️ 期限切れ' : ''}</div>`
@@ -464,7 +493,7 @@
           </div>
           <button
             class="todo-item__delete"
-            aria-label="「${escapeHtml(item.text)}」を削除"
+            aria-label="「${escapeHtml(item.title)}」を削除"
           >
             ✕
           </button>
@@ -484,13 +513,13 @@
 
     /** エラーメッセージを表示する */
     function showError(message) {
-      input.classList.add('todo-form__input--error');
+      titleInput.classList.add('todo-form__input--error');
       errorEl.textContent = message;
     }
 
     /** エラー表示をクリアする */
     function clearError() {
-      input.classList.remove('todo-form__input--error');
+      titleInput.classList.remove('todo-form__input--error');
       errorEl.textContent = '';
     }
 
@@ -501,29 +530,31 @@
       e.preventDefault();
       clearError();
 
-      const text = input.value;
+      const title = titleInput.value;
+      const description = descriptionInput.value;
       const dueDate = dueDateInput.value;
 
-      // 空文字列は拒否
-      if (!text.trim()) {
-        showError('テキストを入力してください');
-        input.focus();
+      // タイトルは必須
+      if (!title.trim()) {
+        showError('タイトルを入力してください');
+        titleInput.focus();
         return;
       }
 
       const items = loadTodos();
-      items.push(createTodo(text, dueDate));
+      items.push(createTodo(title, description, dueDate));
       saveTodos(items);
       render();
 
-      input.value = '';
+      titleInput.value = '';
+      descriptionInput.value = '';
       dueDateInput.value = '';
-      input.focus();
+      titleInput.focus();
     });
 
     /** 入力中のエラークリア */
-    input.addEventListener('input', () => {
-      if (input.classList.contains('todo-form__input--error')) {
+    titleInput.addEventListener('input', () => {
+      if (titleInput.classList.contains('todo-form__input--error')) {
         clearError();
       }
     });
@@ -601,6 +632,8 @@
           // このアイテムだけ更新（再レンダリングより軽量）
           const textEl = li.querySelector('.todo-item__text');
           textEl.classList.toggle('todo-item__text--done', item.done);
+          const descEl = li.querySelector('.todo-item__description');
+          if (descEl) descEl.classList.toggle('todo-item__text--done', item.done);
           e.target.setAttribute(
             'aria-label',
             item.done ? '未完了に戻す' : '完了とする'
@@ -688,7 +721,7 @@
 
     // ===== 初期化 =====
     render();
-    input.focus();
+    titleInput.focus();
   </script>
 </body>
 </html>
