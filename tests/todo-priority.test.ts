@@ -83,8 +83,8 @@ test.describe('優先度設定機能', () => {
       const priorityEl = page.locator('.todo-item__priority').first();
       await priorityEl.click();
 
-      // ドロップダウンから「高」を選択
-      await page.locator('[data-priority-option="high"]').click();
+      // セレクトから「高」を選択（change イベントで即座に保存される）
+      await page.locator('.todo-item__priority-select').selectOption({ label: '高' });
 
       // 優先度が更新されていることを確認
       const updatedPriority = page.locator('.todo-item__priority').first();
@@ -95,7 +95,7 @@ test.describe('優先度設定機能', () => {
       const priorityEl = page.locator('.todo-item__priority').first();
       await priorityEl.click();
 
-      await page.locator('[data-priority-option="low"]').click();
+      await page.locator('.todo-item__priority-select').selectOption({ label: '低' });
 
       const updatedPriority = page.locator('.todo-item__priority').first();
       await expect(updatedPriority).toContainText('低');

@@ -98,6 +98,23 @@
       border-color: #3498db;
     }
 
+    .todo-form__priority {
+      width: 100%;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+      color: #555;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    .todo-form__priority:focus {
+      border-color: #3498db;
+    }
+
     .todo-form__textarea {
       width: 100%;
       padding: 8px 14px;
@@ -215,6 +232,47 @@
     .todo-item__due--overdue {
       color: #e74c3c;
       font-weight: 600;
+    }
+
+    /* ===== 優先度表示 ===== */
+    .todo-item__priority {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .todo-item__priority--high {
+      background: #fde8e8;
+      color: #c0392b;
+    }
+
+    .todo-item__priority--medium {
+      background: #fef3cd;
+      color: #856404;
+    }
+
+    .todo-item__priority--low {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    /* 優先度「高」の項目を強調 */
+    .todo-item--priority-high {
+      border-left: 3px solid #e74c3c;
+    }
+
+    /* ===== 優先度インライン編集 ===== */
+    .todo-item__priority-select {
+      padding: 2px 4px;
+      font-size: 0.7rem;
+      border: 1px solid #3498db;
+      border-radius: 4px;
+      outline: none;
+      font-family: inherit;
     }
 
     .todo-item__description {
@@ -361,6 +419,15 @@
           id="todoDueDate"
           class="todo-form__date"
         />
+        <label for="todoPriority" class="todo-form__label">優先度</label>
+        <select
+          id="todoPriority"
+          class="todo-form__priority"
+        >
+          <option value="high">高</option>
+          <option value="medium" selected>中</option>
+          <option value="low">低</option>
+        </select>
         <span class="todo-form__error" id="errorMessage" role="alert" aria-live="polite"></span>
       </div>
       <button type="submit" class="todo-form__submit" aria-label="追加">
@@ -382,6 +449,7 @@
     const titleInput = document.getElementById('todoTitle');
     const descriptionInput = document.getElementById('todoDescription');
     const dueDateInput = document.getElementById('todoDueDate');
+    const prioritySelect = document.getElementById('todoPriority');
     const errorEl = document.getElementById('errorMessage');
     const listEl = document.getElementById('todoList');
 
@@ -422,12 +490,13 @@
     }
 
     /** 新しいToDoを作成する */
-    function createTodo(title, description, dueDate) {
+    function createTodo(title, description, dueDate, priority) {
       return {
         id: generateId(),
         title: title.trim(),
         description: (description || '').trim(),
         done: false,
+        priority: priority || 'medium',
         dueDate: dueDate || '',
         createdAt: new Date().toISOString(),
       };
@@ -480,8 +549,11 @@
 
       listEl.innerHTML = items
         .map(
-          (item) => `
-        <li class="todo-item" data-id="${item.id}" draggable="true">
+          (item) => {
+            const priorityClass = `todo-item__priority--${item.priority || 'medium'}`;
+            const priorityLabel = { high: '高', medium: '中', low: '低' }[item.priority || 'medium'] || '中';
+            return `
+        <li class="todo-item ${item.priority === 'high' ? 'todo-item--priority-high' : ''}" data-id="${item.id}" draggable="true">
           <div class="todo-item__handle" title="ドラッグして並び替え">⋮⋮</div>
           <input
             type="checkbox"
@@ -490,6 +562,7 @@
             aria-label="${item.done ? '未完了に戻す' : '完了とする'}"
           />
           <div class="todo-item__body">
+            <span class="todo-item__priority ${priorityClass}" data-editable-priority="${item.id}" title="クリックして優先度を変更">${priorityLabel}</span>
             <div class="todo-item__text ${item.done ? 'todo-item__text--done' : ''}" data-editable-title="${item.id}">
               ${escapeHtml(item.title)}
             </div>
@@ -505,7 +578,8 @@
           >
             ✕
           </button>
-        </li>`
+        </li>`;
+          }
         )
         .join('');
     }
@@ -549,14 +623,16 @@
         return;
       }
 
+      const priority = prioritySelect ? prioritySelect.value : 'medium';
       const items = loadTodos();
-      items.push(createTodo(title, description, dueDate));
+      items.push(createTodo(title, description, dueDate, priority));
       saveTodos(items);
       render();
 
       titleInput.value = '';
       descriptionInput.value = '';
       dueDateInput.value = '';
+      if (prioritySelect) prioritySelect.value = 'medium';
       titleInput.focus();
     });
 
@@ -741,6 +817,45 @@
 
         // フォーカスを当てる
         textarea.focus();
+        return;
+      }
+
+      // 優先度の場合 → インラインセレクトに切り替え
+      if (e.target.matches('[data-editable-priority]') || e.target.closest('[data-editable-priority]')) {
+        const li = e.target.closest('.todo-item');
+        const id = li.dataset.id;
+        const item = items.find((todo) => todo.id === id);
+        if (!item) return;
+
+        // すでに編集モードなら何もしない（二重切り替え防止）
+        if (li.querySelector('.todo-item__priority-select')) return;
+
+        const priorityEl = li.querySelector('[data-editable-priority]');
+        priorityEl.removeAttribute('data-editable-priority');
+        priorityEl.innerHTML = `<select class="todo-item__priority-select">
+          <option value="high" ${item.priority === 'high' ? 'selected' : ''}>高</option>
+          <option value="medium" ${item.priority === 'medium' ? 'selected' : ''}>中</option>
+          <option value="low" ${item.priority === 'low' ? 'selected' : ''}>低</option>
+        </select>`;
+
+        const select = li.querySelector('.todo-item__priority-select');
+
+        // 保存処理
+        function savePriority() {
+          const newItem = items.find((t) => t.id === id);
+          if (!newItem) return;
+          newItem.priority = select.value || 'medium';
+          saveTodos(items);
+          render();
+        }
+
+        // セレクト変更 → 即座に保存
+        select.addEventListener('change', () => {
+          savePriority();
+        });
+
+        // フォーカスを当てる
+        select.focus();
         return;
       }
 
