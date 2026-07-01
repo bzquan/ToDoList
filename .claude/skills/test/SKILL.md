@@ -42,6 +42,36 @@ npx playwright show-report
 
 ---
 
+## テストレポート
+
+テスト実行後にファイル別の件数と合計を表示する:
+
+```bash
+# 全テスト実行（結果付きで件数を確認）
+npx playwright test --reporter=line
+```
+
+出力例:
+```
+  [chromium] › tests/todo-basic.test.ts:12:7 ... ✓ (50ms)
+  [chromium] › tests/todo-inline-edit.test.ts:18:9 ... ✓ (60ms)
+  ...
+  48 passed (2.3s)
+```
+
+ファイル別の件数を動的に確認する場合:
+
+```bash
+# grepでテストケースを数え上げる
+grep -c '^\s*test\([' tests/todo-basic.test.ts    # → 10
+grep -c '^\s*test\([' tests/todo-inline-edit.test.ts  # → 12
+grep -c '^\s*test\([' tests/todo-due-date.test.ts   # → 10
+grep -c '^\s*test\([' tests/todo-priority.test.ts   # → 10
+grep -c '^\s*test\([' tests/todo-drag-drop.test.ts  # → 6
+```
+
+---
+
 ## テスト実行時のチェックリスト
 
 テストを実行する前に以下の点を確認する:
