@@ -37,6 +37,7 @@ npx playwright show-report
 | `tests/todo-basic.test.ts` | 追加・一覧表示・完了切替・削除・localStorage永続化 |
 | `tests/todo-inline-edit.test.ts` | タイトル/詳細のインライン編集、Enter保存、改行、空文字バリデーション |
 | `tests/todo-due-date.test.ts` | 期限日の設定・変更・削除、期限なし項目への後から設定 |
+| `tests/todo-priority.test.ts` | 優先度（高・中・低）の設定・変更・視覚的表示・永続化 |
 | `tests/todo-drag-drop.test.ts` | ドラッグハンドルの表示、順序入れ替え、localStorageへの反映 |
 
 ---
