@@ -842,6 +842,9 @@
       render();
     });
 
+    // ===== グローバル公開（テスト用） =====
+    window.render = render;
+
     // ===== 初期化 =====
     render();
     titleInput.focus();
