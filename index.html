@@ -675,10 +675,9 @@
 
       const dueEl = li.querySelector('[data-editable-due]');
       dueEl.removeAttribute('data-editable-due');
-      dueEl.innerHTML = `📅 期限: <input type="date" class="todo-item__due-input" value="${item.dueDate}" /> <button class="todo-item__due-save">保存</button>`;
+      dueEl.innerHTML = `<input type="date" class="todo-item__due-input" value="${item.dueDate}" />`;
 
       const input = li.querySelector('.todo-item__due-input');
-      const saveBtn = li.querySelector('.todo-item__due-save');
 
       function saveDueDate() {
         const newItem = items.find((t) => t.id === id);
@@ -688,7 +687,6 @@
         render();
       }
 
-      saveBtn.addEventListener('click', (ev) => { ev.stopPropagation(); saveDueDate(); });
       input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); saveDueDate(); } });
       input.addEventListener('blur', () => { setTimeout(() => { if (!li.contains(document.activeElement)) saveDueDate(); }, 100); });
 

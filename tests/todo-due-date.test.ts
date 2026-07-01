@@ -54,9 +54,9 @@ test.describe('期限日付機能', () => {
       const dueEl = page.locator('[data-editable-due]').first();
       await dueEl.click();
 
-      // 日付を変更して保存ボタンをクリック
+      // 日付を変更して Enter で保存
       await page.locator('.todo-item__due-input').fill('2031-01-01');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__due-input').press('Enter');
 
       await expect(page.locator('.todo-item__due')).toContainText('2031/01/01');
     });
@@ -76,9 +76,9 @@ test.describe('期限日付機能', () => {
       const dueEl = page.locator('[data-editable-due]').first();
       await dueEl.click();
 
-      // 空にして保存
+      // 空にして Enter で保存
       await page.locator('.todo-item__due-input').fill('');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__due-input').press('Enter');
 
       // 期限表示が非表示になる（期限設定リンクが表示される）
       const dueLink = page.locator('[data-editable-due]');
@@ -90,7 +90,7 @@ test.describe('期限日付機能', () => {
       await dueEl.click();
 
       await page.locator('.todo-item__due-input').fill('2032-12-25');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__due-input').press('Enter');
 
       const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('todos')));
       expect(stored.items[0].dueDate).toBe('2032-12-25');
@@ -121,9 +121,9 @@ test.describe('期限日付機能', () => {
       // インライン入力に切り替わる
       await expect(page.locator('.todo-item__due-input')).toBeVisible();
 
-      // 日付を設定して保存
+      // 日付を設定して Enter で保存
       await page.locator('.todo-item__due-input').fill('2030-09-15');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__due-input').press('Enter');
 
       // 期限が表示される
       await expect(page.locator('.todo-item__due')).toContainText('2030/09/15');
@@ -145,7 +145,7 @@ test.describe('期限日付機能', () => {
       await dueEl.click();
 
       await page.locator('.todo-item__due-input').fill('2031-05-05');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__due-input').press('Enter');
 
       await expect(page.locator('.todo-item__due')).toContainText('2031/05/05');
     });
