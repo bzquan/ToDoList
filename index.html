@@ -709,10 +709,9 @@
 
       const titleEl = li.querySelector('[data-editable-title]');
       titleEl.removeAttribute('data-editable-title');
-      titleEl.innerHTML = `<input type="text" class="todo-item__title-input" value="${escapeHtml(item.title)}" /> <button class="todo-item__due-save">保存</button>`;
+      titleEl.innerHTML = `<input type="text" class="todo-item__title-input" value="${escapeHtml(item.title)}" />`;
 
       const input = li.querySelector('.todo-item__title-input');
-      const saveBtn = li.querySelector('.todo-item__due-save');
 
       function saveTitle() {
         const newItem = items.find((t) => t.id === id);
@@ -723,7 +722,6 @@
         render();
       }
 
-      saveBtn.addEventListener('click', (ev) => { ev.stopPropagation(); saveTitle(); });
       input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); saveTitle(); } });
       input.addEventListener('blur', () => { setTimeout(() => { if (!li.contains(document.activeElement)) saveTitle(); }, 100); });
 

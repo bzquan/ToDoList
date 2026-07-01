@@ -25,9 +25,9 @@ test.describe('インライン編集機能', () => {
       // input に切り替わる
       await expect(page.locator('.todo-item__title-input')).toHaveValue('編集テスト');
 
-      // 値を変更して保存ボタンをクリック
+      // 値を変更して Enter で保存
       await page.locator('.todo-item__title-input').fill('新しいタイトル');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__title-input').press('Enter');
 
       // タイトルが更新されている
       await expect(page.locator('.todo-item__text')).toContainText('新しいタイトル');
@@ -48,9 +48,9 @@ test.describe('インライン編集機能', () => {
       const titleEl = page.locator('[data-editable-title]');
       await titleEl.click();
 
-      // 空にして保存
+      // 空にして Enter で保存（元に戻る）
       await page.locator('.todo-item__title-input').fill('');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__title-input').press('Enter');
 
       // 元に戻っている（再レンダリングされる）
       await expect(page.locator('[data-editable-title]')).toBeVisible();
@@ -72,7 +72,7 @@ test.describe('インライン編集機能', () => {
       await titleEl.click();
 
       await page.locator('.todo-item__title-input').fill('永続化タイトル');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__title-input').press('Enter');
 
       // localStorage を確認
       const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('todos')));
