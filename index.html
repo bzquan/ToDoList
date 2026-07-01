@@ -646,257 +646,197 @@
     // ===== ドラッグ＆ドロップ状態 =====
     let draggedId = null;
 
-    /** リストのイベント委譲（完了切替・削除・期限日編集） */
+    /** リストのイベント委譲（完了切替・削除・インライン編集） */
     listEl.addEventListener('click', (e) => {
       const items = loadTodos();
 
-      // 期限日テキストの場合 → インライン入力に切り替え
-      if (e.target.matches('[data-editable-due]') || e.target.closest('[data-editable-due]')) {
-        const li = e.target.closest('.todo-item');
-        const id = li.dataset.id;
-        const item = items.find((todo) => todo.id === id);
-        if (!item) return;
-
-        // すでに編集モードなら何もしない（二重切り替え防止）
-        if (li.querySelector('.todo-item__due-input')) return;
-
-        const dueEl = li.querySelector('[data-editable-due]');
-        dueEl.removeAttribute('data-editable-due');
-        dueEl.innerHTML = `📅 期限: <input type="date" class="todo-item__due-input" value="${item.dueDate}" /> <button class="todo-item__due-save">保存</button>`;
-
-        const input = li.querySelector('.todo-item__due-input');
-        const saveBtn = li.querySelector('.todo-item__due-save');
-
-        // 保存処理
-        function saveDueDate() {
-          const newItem = items.find((t) => t.id === id);
-          if (!newItem) return;
-          newItem.dueDate = input.value || '';
-          saveTodos(items);
-          render();
-        }
-
-        // ボタンクリック → 保存
-        saveBtn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          saveDueDate();
-        });
-
-        // Enter キー → 保存
-        input.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter') {
-            ev.preventDefault();
-            ev.stopPropagation();
-            saveDueDate();
-          }
-        });
-
-        // フォーカス外れ → 保存（空の場合は削除）
-        input.addEventListener('blur', () => {
-          setTimeout(() => {
-            if (!li.contains(document.activeElement)) {
-              saveDueDate();
-            }
-          }, 100);
-        });
-
-        // フォーカスを当てる
-        input.focus();
-        return;
-      }
-
-      // タイトルテキストの場合 → インライン入力に切り替え
-      if (e.target.matches('[data-editable-title]') || e.target.closest('[data-editable-title]')) {
-        const li = e.target.closest('.todo-item');
-        const id = li.dataset.id;
-        const item = items.find((todo) => todo.id === id);
-        if (!item) return;
-
-        // すでに編集モードなら何もしない（二重切り替え防止）
-        if (li.querySelector('.todo-item__title-input')) return;
-
-        const titleEl = li.querySelector('[data-editable-title]');
-        titleEl.removeAttribute('data-editable-title');
-        titleEl.innerHTML = `<input type="text" class="todo-item__title-input" value="${escapeHtml(item.title)}" /> <button class="todo-item__due-save">保存</button>`;
-
-        const input = li.querySelector('.todo-item__title-input');
-        const saveBtn = li.querySelector('.todo-item__due-save');
-
-        // 保存処理
-        function saveTitle() {
-          const newItem = items.find((t) => t.id === id);
-          if (!newItem) return;
-          if (!input.value.trim()) {
-            render(); // タイトルは必須 — 空なら元に戻す
-            return;
-          }
-          newItem.title = input.value.trim();
-          saveTodos(items);
-          render();
-        }
-
-        // ボタンクリック → 保存
-        saveBtn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          saveTitle();
-        });
-
-        // Enter キー → 保存
-        input.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter') {
-            ev.preventDefault();
-            ev.stopPropagation();
-            saveTitle();
-          }
-        });
-
-        // フォーカス外れ → 保存（空なら元に戻す）
-        input.addEventListener('blur', () => {
-          setTimeout(() => {
-            if (!li.contains(document.activeElement)) {
-              saveTitle();
-            }
-          }, 100);
-        });
-
-        // フォーカスを当てて全選択
-        input.focus();
-        input.select();
-        return;
-      }
-
-      // 詳細テキストの場合 → インライン textarea に切り替え
-      if (e.target.matches('[data-editable-description]') || e.target.closest('[data-editable-description]')) {
-        const li = e.target.closest('.todo-item');
-        const id = li.dataset.id;
-        const item = items.find((todo) => todo.id === id);
-        if (!item) return;
-
-        // すでに編集モードなら何もしない（二重切り替え防止）
-        if (li.querySelector('.todo-item__desc-input')) return;
-
-        const descEl = li.querySelector('[data-editable-description]');
-        descEl.removeAttribute('data-editable-description');
-        descEl.innerHTML = `<textarea class="todo-item__desc-input" rows="3">${escapeHtml(item.description)}</textarea> <button class="todo-item__due-save">保存</button>`;
-
-        const textarea = li.querySelector('.todo-item__desc-input');
-        const saveBtn = li.querySelector('.todo-item__due-save');
-
-        // 保存処理
-        function saveDescription() {
-          const newItem = items.find((t) => t.id === id);
-          if (!newItem) return;
-          newItem.description = textarea.value.trim();
-          saveTodos(items);
-          render();
-        }
-
-        // ボタンクリック → 保存
-        saveBtn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          saveDescription();
-        });
-
-        // Shift+Enter キー → 保存（Enter は改行）
-        textarea.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter' && !ev.shiftKey) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            saveDescription();
-          }
-        });
-
-        // フォーカス外れ → 保存
-        textarea.addEventListener('blur', () => {
-          setTimeout(() => {
-            if (!li.contains(document.activeElement)) {
-              saveDescription();
-            }
-          }, 100);
-        });
-
-        // フォーカスを当てる
-        textarea.focus();
-        return;
-      }
-
-      // 優先度の場合 → インラインセレクトに切り替え
-      if (e.target.matches('[data-editable-priority]') || e.target.closest('[data-editable-priority]')) {
-        const li = e.target.closest('.todo-item');
-        const id = li.dataset.id;
-        const item = items.find((todo) => todo.id === id);
-        if (!item) return;
-
-        // すでに編集モードなら何もしない（二重切り替え防止）
-        if (li.querySelector('.todo-item__priority-select')) return;
-
-        const priorityEl = li.querySelector('[data-editable-priority]');
-        priorityEl.removeAttribute('data-editable-priority');
-        priorityEl.innerHTML = `<select class="todo-item__priority-select">
-          <option value="high" ${item.priority === 'high' ? 'selected' : ''}>高</option>
-          <option value="medium" ${item.priority === 'medium' ? 'selected' : ''}>中</option>
-          <option value="low" ${item.priority === 'low' ? 'selected' : ''}>低</option>
-        </select>`;
-
-        const select = li.querySelector('.todo-item__priority-select');
-
-        // 保存処理
-        function savePriority() {
-          const newItem = items.find((t) => t.id === id);
-          if (!newItem) return;
-          newItem.priority = select.value || 'medium';
-          saveTodos(items);
-          render();
-        }
-
-        // セレクト変更 → 即座に保存
-        select.addEventListener('change', () => {
-          savePriority();
-        });
-
-        // フォーカスを当てる
-        select.focus();
-        return;
-      }
-
-      // チェックボックスの場合 → 完了/未完了のトグル
-      if (e.target.matches('.todo-item__checkbox')) {
-        const li = e.target.closest('.todo-item');
-        const id = li.dataset.id;
-        const item = items.find((todo) => todo.id === id);
-        if (item) {
-          item.done = !item.done;
-          saveTodos(items);
-          // このアイテムだけ更新（再レンダリングより軽量）
-          const textEl = li.querySelector('.todo-item__text');
-          textEl.classList.toggle('todo-item__text--done', item.done);
-          const descEl = li.querySelector('.todo-item__description');
-          if (descEl) descEl.classList.toggle('todo-item__text--done', item.done);
-          e.target.setAttribute(
-            'aria-label',
-            item.done ? '未完了に戻す' : '完了とする'
-          );
-        }
-        return;
-      }
-
-      // ✕ボタンの場合 → 削除
-      if (e.target.matches('.todo-item__delete')) {
-        const li = e.target.closest('.todo-item');
-        const id = li.dataset.id;
-        const filtered = items.filter((todo) => todo.id !== id);
-        saveTodos(filtered);
-        render();
-        return;
-      }
+      // 各ハンドラを試す — 最初にマッチしたものを実行して終了
+      if (handleDueDateEdit(e, items)) return;
+      if (handleTitleEdit(e, items)) return;
+      if (handleDescriptionEdit(e, items)) return;
+      if (handlePriorityEdit(e, items)) return;
+      if (handleCheckboxToggle(e, items)) return;
+      handleDelete(e, items);
     });
+
+    // ===== インライン編集ハンドラ（Composite Method Pattern） =====
+
+    /** 期限日のインライン編集 */
+    function handleDueDateEdit(e, items) {
+      const li = e.target.closest('.todo-item');
+      if (!li || !(e.target.matches('[data-editable-due]') || e.target.closest('[data-editable-due]'))) return false;
+
+      // すでに編集モードなら何もしない（二重切り替え防止）
+      if (li.querySelector('.todo-item__due-input')) return true;
+
+      const id = li.dataset.id;
+      const item = items.find((todo) => todo.id === id);
+      if (!item) return false;
+
+      const dueEl = li.querySelector('[data-editable-due]');
+      dueEl.removeAttribute('data-editable-due');
+      dueEl.innerHTML = `📅 期限: <input type="date" class="todo-item__due-input" value="${item.dueDate}" /> <button class="todo-item__due-save">保存</button>`;
+
+      const input = li.querySelector('.todo-item__due-input');
+      const saveBtn = li.querySelector('.todo-item__due-save');
+
+      function saveDueDate() {
+        const newItem = items.find((t) => t.id === id);
+        if (!newItem) return;
+        newItem.dueDate = input.value || '';
+        saveTodos(items);
+        render();
+      }
+
+      saveBtn.addEventListener('click', (ev) => { ev.stopPropagation(); saveDueDate(); });
+      input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); saveDueDate(); } });
+      input.addEventListener('blur', () => { setTimeout(() => { if (!li.contains(document.activeElement)) saveDueDate(); }, 100); });
+
+      input.focus();
+      return true;
+    }
+
+    /** タイトルのインライン編集 */
+    function handleTitleEdit(e, items) {
+      const li = e.target.closest('.todo-item');
+      if (!li || !(e.target.matches('[data-editable-title]') || e.target.closest('[data-editable-title]'))) return false;
+
+      if (li.querySelector('.todo-item__title-input')) return true;
+
+      const id = li.dataset.id;
+      const item = items.find((todo) => todo.id === id);
+      if (!item) return false;
+
+      const titleEl = li.querySelector('[data-editable-title]');
+      titleEl.removeAttribute('data-editable-title');
+      titleEl.innerHTML = `<input type="text" class="todo-item__title-input" value="${escapeHtml(item.title)}" /> <button class="todo-item__due-save">保存</button>`;
+
+      const input = li.querySelector('.todo-item__title-input');
+      const saveBtn = li.querySelector('.todo-item__due-save');
+
+      function saveTitle() {
+        const newItem = items.find((t) => t.id === id);
+        if (!newItem) return;
+        if (!input.value.trim()) { render(); return; }
+        newItem.title = input.value.trim();
+        saveTodos(items);
+        render();
+      }
+
+      saveBtn.addEventListener('click', (ev) => { ev.stopPropagation(); saveTitle(); });
+      input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); saveTitle(); } });
+      input.addEventListener('blur', () => { setTimeout(() => { if (!li.contains(document.activeElement)) saveTitle(); }, 100); });
+
+      input.focus();
+      input.select();
+      return true;
+    }
+
+    /** 詳細テキストのインライン編集 */
+    function handleDescriptionEdit(e, items) {
+      const li = e.target.closest('.todo-item');
+      if (!li || !(e.target.matches('[data-editable-description]') || e.target.closest('[data-editable-description]'))) return false;
+
+      if (li.querySelector('.todo-item__desc-input')) return true;
+
+      const id = li.dataset.id;
+      const item = items.find((todo) => todo.id === id);
+      if (!item) return false;
+
+      const descEl = li.querySelector('[data-editable-description]');
+      descEl.removeAttribute('data-editable-description');
+      descEl.innerHTML = `<textarea class="todo-item__desc-input" rows="3">${escapeHtml(item.description)}</textarea> <button class="todo-item__due-save">保存</button>`;
+
+      const textarea = li.querySelector('.todo-item__desc-input');
+      const saveBtn = li.querySelector('.todo-item__due-save');
+
+      function saveDescription() {
+        const newItem = items.find((t) => t.id === id);
+        if (!newItem) return;
+        newItem.description = textarea.value.trim();
+        saveTodos(items);
+        render();
+      }
+
+      saveBtn.addEventListener('click', (ev) => { ev.stopPropagation(); saveDescription(); });
+      textarea.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); ev.stopPropagation(); saveDescription(); } });
+      textarea.addEventListener('blur', () => { setTimeout(() => { if (!li.contains(document.activeElement)) saveDescription(); }, 100); });
+
+      textarea.focus();
+      return true;
+    }
+
+    /** 優先度のインライン編集 */
+    function handlePriorityEdit(e, items) {
+      const li = e.target.closest('.todo-item');
+      if (!li || !(e.target.matches('[data-editable-priority]') || e.target.closest('[data-editable-priority]'))) return false;
+
+      if (li.querySelector('.todo-item__priority-select')) return true;
+
+      const id = li.dataset.id;
+      const item = items.find((todo) => todo.id === id);
+      if (!item) return false;
+
+      const priorityEl = li.querySelector('[data-editable-priority]');
+      priorityEl.removeAttribute('data-editable-priority');
+      priorityEl.innerHTML = `<select class="todo-item__priority-select">
+        <option value="high" ${item.priority === 'high' ? 'selected' : ''}>高</option>
+        <option value="medium" ${item.priority === 'medium' ? 'selected' : ''}>中</option>
+        <option value="low" ${item.priority === 'low' ? 'selected' : ''}>低</option>
+      </select>`;
+
+      const select = li.querySelector('.todo-item__priority-select');
+
+      function savePriority() {
+        const newItem = items.find((t) => t.id === id);
+        if (!newItem) return;
+        newItem.priority = select.value || 'medium';
+        saveTodos(items);
+        render();
+      }
+
+      select.addEventListener('change', () => { savePriority(); });
+      select.focus();
+      return true;
+    }
+
+    /** チェックボックス（完了/未完了トグル） */
+    function handleCheckboxToggle(e, items) {
+      if (!e.target.matches('.todo-item__checkbox')) return false;
+
+      const li = e.target.closest('.todo-item');
+      const id = li.dataset.id;
+      const item = items.find((todo) => todo.id === id);
+      if (item) {
+        item.done = !item.done;
+        saveTodos(items);
+        const textEl = li.querySelector('.todo-item__text');
+        textEl.classList.toggle('todo-item__text--done', item.done);
+        const descEl = li.querySelector('.todo-item__description');
+        if (descEl) descEl.classList.toggle('todo-item__text--done', item.done);
+        e.target.setAttribute('aria-label', item.done ? '未完了に戻す' : '完了とする');
+      }
+      return true;
+    }
+
+    /** 削除 */
+    function handleDelete(e, items) {
+      if (!e.target.matches('.todo-item__delete')) return;
+
+      const li = e.target.closest('.todo-item');
+      const id = li.dataset.id;
+      const filtered = items.filter((todo) => todo.id !== id);
+      saveTodos(filtered);
+      render();
+    }
+
+    // ===== ドラッグ＆ドロップハンドラ =====
 
     /** ドラッグ開始 */
     listEl.addEventListener('dragstart', (e) => {
       const li = e.target.closest('.todo-item');
       if (!li || !li.draggable) return;
       draggedId = li.dataset.id;
-      // ドラッグ中のスタイルを項目に付与
       li.style.opacity = '0.5';
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', draggedId);
@@ -906,29 +846,24 @@
     listEl.addEventListener('dragend', (e) => {
       const li = e.target.closest('.todo-item');
       if (li) li.style.opacity = '';
-      // 全項目のプレースホルダーを削除
       document.querySelectorAll('.todo-item--drag-over').forEach((el) => {
         el.classList.remove('todo-item--drag-over');
       });
       draggedId = null;
     });
 
-    /** ドラッグオーバー（上に乗っている間、毎フレーム発火） */
+    /** ドラッグオーバー */
     listEl.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
 
       const li = e.target.closest('.todo-item');
       if (!li || !li.draggable) return;
-
-      // 自分自身にはプレースホルダーを立てない
       if (li.dataset.id === draggedId) return;
 
-      // 既存のプレースホルダーを全項目から外す
       document.querySelectorAll('.todo-item--drag-over').forEach((el) => {
         el.classList.remove('todo-item--drag-over');
       });
-
       li.classList.add('todo-item--drag-over');
     });
 
@@ -942,7 +877,6 @@
       const fromIndex = items.findIndex((todo) => todo.id === targetId);
       if (fromIndex === -1) return;
 
-      // ドロップ先の項目を取得
       const li = e.target.closest('.todo-item');
       if (!li || !li.draggable) return;
 
@@ -950,7 +884,6 @@
       const toIndex = items.findIndex((todo) => todo.id === toId);
       if (toIndex === -1 || fromIndex === toIndex) return;
 
-      // 配列から削除して再挿入
       const [moved] = items.splice(fromIndex, 1);
       items.splice(toIndex, 0, moved);
       saveTodos(items);
