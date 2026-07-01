@@ -217,6 +217,14 @@
       font-weight: 600;
     }
 
+    .todo-item__description {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 2px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     .todo-item__delete {
       flex-shrink: 0;
       width: 32px;
@@ -485,7 +493,7 @@
             <div class="todo-item__text ${item.done ? 'todo-item__text--done' : ''}" data-editable-title="${item.id}">
               ${escapeHtml(item.title)}
             </div>
-            ${item.description ? `<div class="todo-item__description ${item.done ? 'todo-item__text--done' : ''}" data-editable-description="${item.id}" style="cursor:text;">${escapeHtml(item.description)}</div>` : ''}
+            ${item.description ? `<div class="todo-item__description ${item.done ? 'todo-item__text--done' : ''}" data-editable-description="${item.id}">${escapeHtml(item.description)}</div>` : ''}
             <div class="todo-item__time">${formatTime(item.createdAt)}</div>
             ${item.dueDate
               ? `<div class="todo-item__due ${isOverdue(item.dueDate, item.done) ? 'todo-item__due--overdue' : ''}" data-editable-due="${item.id}">📅 期限: ${formatDate(item.dueDate)}${isOverdue(item.dueDate, item.done) ? ' ⚠️ 期限切れ' : ''}</div>`
