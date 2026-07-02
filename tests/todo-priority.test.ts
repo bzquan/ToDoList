@@ -1,14 +1,11 @@
 // @ts-nocheck
 import { test, expect } from '@playwright/test';
-import path from 'path';
+import { setupPage } from './setup.ts';
 
 test.describe('優先度設定機能', () => {
   // テスト前に localStorage をクリア
   test.beforeEach(async ({ page }) => {
-    const filePath = path.resolve(__dirname, '../index.html');
-    await page.goto('file://' + filePath);
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
+    await setupPage(page);
   });
 
   test.describe('追加時の優先度設定', () => {

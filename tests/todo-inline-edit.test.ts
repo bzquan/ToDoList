@@ -1,14 +1,11 @@
 // @ts-nocheck
 import { test, expect } from '@playwright/test';
-import path from 'path';
+import { setupPage } from './setup.ts';
 
 test.describe('インライン編集機能', () => {
   // テスト前に localStorage をクリア
   test.beforeEach(async ({ page }) => {
-    const filePath = path.resolve(__dirname, '../index.html');
-    await page.goto('file://' + filePath);
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
+    await setupPage(page);
 
     // ToDo を追加しておく
     await page.fill('#todoTitle', '編集テスト');

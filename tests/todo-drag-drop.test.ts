@@ -1,14 +1,11 @@
 // @ts-nocheck
 import { test, expect } from '@playwright/test';
-import path from 'path';
+import { setupPage } from './setup.ts';
 
 test.describe('ドラッグ&ドロップで並び替え', () => {
   // テスト前に localStorage をクリアし、固定順の ToDo を追加
   test.beforeEach(async ({ page }) => {
-    const filePath = path.resolve(__dirname, '../index.html');
-    await page.goto('file://' + filePath);
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
+    await setupPage(page);
 
     // 3つの項目を追加（左から A, B, C の順）
     for (const title of ['項目A', '項目B', '項目C']) {
