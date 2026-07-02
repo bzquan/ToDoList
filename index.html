@@ -620,7 +620,14 @@
     addEventListeners();
 
     function addEventListeners() {
-        /** フォーム送信（ToDo追加） */
+        registerFormSubmit();
+        registerInputErrorClear();
+        registerListClick();
+        registerDragEvents();
+    }
+
+    /** フォーム送信（ToDo追加） */
+    function registerFormSubmit() {
         form.addEventListener('submit', (e) => {
           e.preventDefault();
           clearError();
@@ -648,15 +655,19 @@
           if (prioritySelect) prioritySelect.value = 'medium';
           titleInput.focus();
         });
+    }
 
-        /** 入力中のエラークリア */
+    /** 入力中のエラークリア */
+    function registerInputErrorClear() {
         titleInput.addEventListener('input', () => {
           if (titleInput.classList.contains('todo-form__input--error')) {
             clearError();
           }
         });
+    }
 
-        /** リストのイベント委譲（完了切替・削除・インライン編集） */
+    /** リストのイベント委譲（完了切替・削除・インライン編集） */
+    function registerListClick() {
         listEl.addEventListener('click', (e) => {
           const items = loadTodos();
 
@@ -668,6 +679,14 @@
           if (handleCheckboxToggle(e, items)) return;
           handleDelete(e, items);
         });
+    }
+
+    /** ドラッグ＆ドロップイベント登録 */
+    function registerDragEvents() {
+        listEl.addEventListener('dragstart', handleDragStart);
+        listEl.addEventListener('dragend', handleDragEnd);
+        listEl.addEventListener('dragover', handleDragOver);
+        listEl.addEventListener('drop', handleDrop);
     }
 
     // ===== インライン編集ハンドラ（Composite Method Pattern） =====
