@@ -1,10 +1,12 @@
 // @ts-nocheck
 import { test, expect } from '@playwright/test';
+import path from 'path';
 
 test.describe('ドラッグ&ドロップで並び替え', () => {
   // テスト前に localStorage をクリアし、固定順の ToDo を追加
   test.beforeEach(async ({ page }) => {
-    await page.goto('file:///d:/todo-app/index.html');
+    const filePath = path.resolve(__dirname, '../index.html');
+    await page.goto('file://' + filePath);
     await page.evaluate(() => localStorage.clear());
     await page.reload();
 

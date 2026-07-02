@@ -1,10 +1,12 @@
 // @ts-nocheck
 import { test, expect } from '@playwright/test';
+import path from 'path';
 
 test.describe('インライン編集機能', () => {
   // テスト前に localStorage をクリア
   test.beforeEach(async ({ page }) => {
-    await page.goto('file:///d:/todo-app/index.html');
+    const filePath = path.resolve(__dirname, '../index.html');
+    await page.goto('file://' + filePath);
     await page.evaluate(() => localStorage.clear());
     await page.reload();
 
