@@ -1,14 +1,10 @@
 // @ts-nocheck
 import { test, expect } from '@playwright/test';
-import path from 'path';
+import { setupPage } from './setup.ts';
 
 test.describe('ToDo 基本機能', () => {
-  // テスト前に localStorage をクリア
   test.beforeEach(async ({ page }) => {
-    const filePath = path.resolve(__dirname, '../index.html');
-    await page.goto('file://' + filePath);
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
+    await setupPage(page);
   });
 
   test('空タイトルで追加するとエラーが表示される', async ({ page }) => {
