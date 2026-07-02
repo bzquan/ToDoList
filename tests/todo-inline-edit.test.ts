@@ -95,9 +95,9 @@ test.describe('インライン編集機能', () => {
       // textarea に切り替わる
       await expect(page.locator('.todo-item__desc-input')).toHaveValue('元の詳細');
 
-      // 値を変更して保存
+      // 値を変更して Enter で保存
       await page.locator('.todo-item__desc-input').fill('新しい詳細');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__desc-input').press('Enter');
 
       await expect(page.locator('.todo-item__description')).toContainText('新しい詳細');
     });
@@ -123,7 +123,7 @@ test.describe('インライン編集機能', () => {
       await page.locator('.todo-item__desc-input').type('二行目');
 
       // 保存
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__desc-input').press('Enter');
 
       // 改行が保持されていることを確認（white-space: pre-wrap）
       const text = await page.locator('.todo-item__description').textContent();
@@ -135,9 +135,9 @@ test.describe('インライン編集機能', () => {
       const descEl = page.locator('[data-editable-description]');
       await descEl.click();
 
-      // 空にして保存
+      // 空にして Enter で保存
       await page.locator('.todo-item__desc-input').fill('');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__desc-input').press('Enter');
 
       // 詳細が非表示になる
       await expect(page.locator('.todo-item__description')).not.toBeVisible();
@@ -148,7 +148,7 @@ test.describe('インライン編集機能', () => {
       await descEl.click();
 
       await page.locator('.todo-item__desc-input').fill('永続化詳細');
-      await page.locator('.todo-item__due-save').click();
+      await page.locator('.todo-item__desc-input').press('Enter');
 
       const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('todos')));
       expect(stored.items[0].description).toBe('永続化詳細');

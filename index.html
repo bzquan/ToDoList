@@ -760,10 +760,9 @@
 
       const descEl = li.querySelector('[data-editable-description]');
       descEl.removeAttribute('data-editable-description');
-      descEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;"><textarea class="todo-item__desc-input" rows="3">${escapeHtml(item.description)}</textarea><button class="todo-item__due-save">保存</button></div>`;
+      descEl.innerHTML = `<textarea class="todo-item__desc-input" rows="3">${escapeHtml(item.description)}</textarea>`;
 
       const textarea = li.querySelector('.todo-item__desc-input');
-      const saveBtn = li.querySelector('.todo-item__due-save');
 
       function saveDescription() {
         const newItem = items.find((t) => t.id === id);
@@ -773,7 +772,6 @@
         render();
       }
 
-      saveBtn.addEventListener('click', (ev) => { ev.stopPropagation(); saveDescription(); });
       textarea.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); ev.stopPropagation(); saveDescription(); } });
       textarea.addEventListener('blur', () => { setTimeout(() => { if (!li.contains(document.activeElement)) saveDescription(); }, 100); });
 
