@@ -616,59 +616,59 @@
       errorEl.textContent = '';
     }
 
-    // ===== イベントハンドラ =====
+    let draggedId = null;   // ドラッグ＆ドロップ状態
+    addEventListeners();
 
-    /** フォーム送信（ToDo追加） */
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      clearError();
+    function addEventListeners() {
+        /** フォーム送信（ToDo追加） */
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          clearError();
 
-      const title = titleInput.value;
-      const description = descriptionInput.value;
-      const dueDate = dueDateInput.value;
+          const title = titleInput.value;
+          const description = descriptionInput.value;
+          const dueDate = dueDateInput.value;
 
-      // タイトルは必須
-      if (!title.trim()) {
-        showError('タイトルを入力してください');
-        titleInput.focus();
-        return;
-      }
+          // タイトルは必須
+          if (!title.trim()) {
+            showError('タイトルを入力してください');
+            titleInput.focus();
+            return;
+          }
 
-      const priority = prioritySelect ? prioritySelect.value : 'medium';
-      const items = loadTodos();
-      items.push(createTodo(title, description, dueDate, priority));
-      saveTodos(items);
-      render();
+          const priority = prioritySelect ? prioritySelect.value : 'medium';
+          const items = loadTodos();
+          items.push(createTodo(title, description, dueDate, priority));
+          saveTodos(items);
+          render();
 
-      titleInput.value = '';
-      descriptionInput.value = '';
-      dueDateInput.value = '';
-      if (prioritySelect) prioritySelect.value = 'medium';
-      titleInput.focus();
-    });
+          titleInput.value = '';
+          descriptionInput.value = '';
+          dueDateInput.value = '';
+          if (prioritySelect) prioritySelect.value = 'medium';
+          titleInput.focus();
+        });
 
-    /** 入力中のエラークリア */
-    titleInput.addEventListener('input', () => {
-      if (titleInput.classList.contains('todo-form__input--error')) {
-        clearError();
-      }
-    });
+        /** 入力中のエラークリア */
+        titleInput.addEventListener('input', () => {
+          if (titleInput.classList.contains('todo-form__input--error')) {
+            clearError();
+          }
+        });
 
-    // ===== ドラッグ＆ドロップ状態 =====
-    let draggedId = null;
+        /** リストのイベント委譲（完了切替・削除・インライン編集） */
+        listEl.addEventListener('click', (e) => {
+          const items = loadTodos();
 
-    /** リストのイベント委譲（完了切替・削除・インライン編集） */
-    listEl.addEventListener('click', (e) => {
-      const items = loadTodos();
-
-      // 各ハンドラを試す — 最初にマッチしたものを実行して終了
-      if (handleDueDateEdit(e, items)) return;
-      if (handleTitleEdit(e, items)) return;
-      if (handleDescriptionEdit(e, items)) return;
-      if (handlePriorityEdit(e, items)) return;
-      if (handleCheckboxToggle(e, items)) return;
-      handleDelete(e, items);
-    });
+          // 各ハンドラを試す — 最初にマッチしたものを実行して終了
+          if (handleDueDateEdit(e, items)) return;
+          if (handleTitleEdit(e, items)) return;
+          if (handleDescriptionEdit(e, items)) return;
+          if (handlePriorityEdit(e, items)) return;
+          if (handleCheckboxToggle(e, items)) return;
+          handleDelete(e, items);
+        });
+    }
 
     // ===== インライン編集ハンドラ（Composite Method Pattern） =====
 
