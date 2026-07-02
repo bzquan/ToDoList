@@ -283,6 +283,25 @@
       word-break: break-word;
     }
 
+    .todo-item__desc-input {
+      display: block;
+      width: 100%;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      border: 1px solid #3498db;
+      border-radius: 4px;
+      outline: none;
+      font-family: inherit;
+      color: #333;
+      background: #fff;
+      resize: both;
+    }
+
+    .todo-item__desc-input:focus {
+      border-color: #2980b9;
+      box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+    }
+
     .todo-item__delete {
       flex-shrink: 0;
       width: 32px;
@@ -741,7 +760,7 @@
 
       const descEl = li.querySelector('[data-editable-description]');
       descEl.removeAttribute('data-editable-description');
-      descEl.innerHTML = `<textarea class="todo-item__desc-input" rows="3">${escapeHtml(item.description)}</textarea> <button class="todo-item__due-save">保存</button>`;
+      descEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;"><textarea class="todo-item__desc-input" rows="3">${escapeHtml(item.description)}</textarea><button class="todo-item__due-save">保存</button></div>`;
 
       const textarea = li.querySelector('.todo-item__desc-input');
       const saveBtn = li.querySelector('.todo-item__due-save');
