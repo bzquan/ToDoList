@@ -375,6 +375,30 @@
       background: #2980b9;
     }
 
+    /* ===== エクスポート/インポートボタン ===== */
+    .app__actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .app__action-btn {
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+
+    .app__action-btn:hover {
+      border-color: #3498db;
+      color: #3498db;
+    }
+
     /* ===== レスポンシブ ===== */
     @media (max-width: 480px) {
       body {
@@ -446,6 +470,15 @@
       </button>
     </form>
 
+    <!-- エクスポート/インポート -->
+    <div class="app__actions">
+      <button type="button" class="app__action-btn" id="btnExport" aria-label="データをエクスポート">エクスポート</button>
+      <label class="app__action-btn" aria-label="データを取り込む">
+        インポート
+        <input type="file" id="importInput" accept=".json,application/json" hidden />
+      </label>
+    </div>
+
     <!-- ToDo リスト -->
     <ul class="todo-list" id="todoList" aria-label="ToDo一覧"></ul>
   </div>
@@ -463,6 +496,8 @@
     const prioritySelect = document.getElementById('todoPriority');
     const errorEl = document.getElementById('errorMessage');
     const listEl = document.getElementById('todoList');
+    const btnExport = document.getElementById('btnExport');
+    const importInput = document.getElementById('importInput');
 
     // ===== データ操作 =====
 
@@ -493,6 +528,51 @@
         items: items,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    /** データをJSONファイルとしてエクスポートする */
+    function exportTodos() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      let data;
+
+      if (raw) {
+        data = JSON.parse(raw);
+      } else {
+        data = { version: SCHEMA_VERSION, items: [] };
+      }
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      a.href = url;
+      a.download = `todo-export-${date}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    /** JSONファイルからデータをインポートする */
+    function importTodos(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+
+          // スキーマ検証
+          if (!data || typeof data.version !== 'number' || !Array.isArray(data.items)) {
+            showError('無効なファイル形式です');
+            return;
+          }
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          render();
+        } catch {
+          showError('JSONの解析に失敗しました');
+        }
+      };
+      reader.readAsText(file);
     }
 
     /** 一意なIDを生成する */
@@ -624,6 +704,18 @@
         registerInputErrorClear();
         registerListClick();
         registerDragEvents();
+        registerExportImport();
+    }
+
+    /** エクスポート/インポートイベント登録 */
+    function registerExportImport() {
+        btnExport.addEventListener('click', () => { exportTodos(); });
+        importInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) { importTodos(file); }
+          // 同一ファイルを再度選択可能にする
+          importInput.value = '';
+        });
     }
 
     /** フォーム送信（ToDo追加） */
