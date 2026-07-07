@@ -715,10 +715,16 @@
         newItem.dueDate = input.value || '';
         saveTodos(items);
         render();
+        // 保存後に blur リスナーを削除（DOM が再構築されるため）
+        input.removeEventListener('blur', onDueBlur);
       }
 
+      // blur リスナーを名前付き関数として定義（削除可能にする）
+      function onDueBlur() {
+        setTimeout(() => { if (!li.contains(document.activeElement)) saveDueDate(); }, 100);
+      }
       input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); saveDueDate(); } });
-      input.addEventListener('blur', () => { setTimeout(() => { if (!li.contains(document.activeElement)) saveDueDate(); }, 100); });
+      input.addEventListener('blur', onDueBlur);
 
       input.focus();
       return true;
@@ -744,14 +750,21 @@
       function saveTitle() {
         const newItem = items.find((t) => t.id === id);
         if (!newItem) return;
-        if (!input.value.trim()) { render(); return; }
+        if (!input.value.trim()) { render(); removeTitleBlur(); return; }
         newItem.title = input.value.trim();
         saveTodos(items);
         render();
+        removeTitleBlur();
       }
 
+      // blur リスナーを名前付き関数として定義（削除可能にする）
+      function onTitleBlur() {
+        setTimeout(() => { if (!li.contains(document.activeElement)) saveTitle(); }, 100);
+      }
+      function removeTitleBlur() { input.removeEventListener('blur', onTitleBlur); }
+
       input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); saveTitle(); } });
-      input.addEventListener('blur', () => { setTimeout(() => { if (!li.contains(document.activeElement)) saveTitle(); }, 100); });
+      input.addEventListener('blur', onTitleBlur);
 
       input.focus();
       input.select();
@@ -781,10 +794,17 @@
         newItem.description = textarea.value.trim();
         saveTodos(items);
         render();
+        removeDescBlur();
       }
 
+      // blur リスナーを名前付き関数として定義（削除可能にする）
+      function onDescBlur() {
+        setTimeout(() => { if (!li.contains(document.activeElement)) saveDescription(); }, 100);
+      }
+      function removeDescBlur() { textarea.removeEventListener('blur', onDescBlur); }
+
       textarea.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); ev.stopPropagation(); saveDescription(); } });
-      textarea.addEventListener('blur', () => { setTimeout(() => { if (!li.contains(document.activeElement)) saveDescription(); }, 100); });
+      textarea.addEventListener('blur', onDescBlur);
 
       textarea.focus();
       return true;
@@ -817,9 +837,14 @@
         newItem.priority = select.value || 'medium';
         saveTodos(items);
         render();
+        removePriorityChange();
       }
 
-      select.addEventListener('change', () => { savePriority(); });
+      // change リスナーを名前付き関数として定義（削除可能にする）
+      function onPriorityChange() { savePriority(); }
+      function removePriorityChange() { select.removeEventListener('change', onPriorityChange); }
+
+      select.addEventListener('change', onPriorityChange);
       select.focus();
       return true;
     }
@@ -913,11 +938,6 @@
       saveTodos(items);
       render();
     }
-
-    listEl.addEventListener('dragstart', handleDragStart);
-    listEl.addEventListener('dragend', handleDragEnd);
-    listEl.addEventListener('dragover', handleDragOver);
-    listEl.addEventListener('drop', handleDrop);
 
     // ===== グローバル公開（テスト用） =====
     window.render = render;
