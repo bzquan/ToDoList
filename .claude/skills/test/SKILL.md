@@ -39,6 +39,7 @@ npx playwright show-report
 | `tests/todo-due-date.test.ts` | 期限日の設定・変更・削除、期限なし項目への後から設定 |
 | `tests/todo-priority.test.ts` | 優先度（高・中・低）の設定・変更・視覚的表示・永続化 |
 | `tests/todo-drag-drop.test.ts` | ドラッグハンドルの表示、順序入れ替え、localStorageへの反映 |
+| `tests/todo-export-import.test.ts` | エクスポート（JSONダウンロード）、インポート（ファイル読み込み・スキーマ検証）、エラーケース |
 
 ---
 
@@ -68,6 +69,7 @@ grep -c '^\s*test\([' tests/todo-inline-edit.test.ts  # → 12
 grep -c '^\s*test\([' tests/todo-due-date.test.ts   # → 10
 grep -c '^\s*test\([' tests/todo-priority.test.ts   # → 10
 grep -c '^\s*test\([' tests/todo-drag-drop.test.ts  # → 6
+grep -c '^\s*test\([' tests/todo-export-import.test.ts  # → 10
 ```
 
 ---
