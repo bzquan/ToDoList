@@ -137,13 +137,13 @@ test.describe('Feature: 優先度（高・中・低）の設定と表示', () =>
     const items = page.locator('.todo-item');
     await expect(items).toHaveCount(3);
 
-    // When/Then: ToDo一覧を表示する
+    // When/Then: ToDo一覧を表示する（unshiftのためDOMは[C(low), B(medium), A(high)]）
     // 各項目の優先度spanに適切なCSSクラスが付く
     const prioritySpans = page.locator('.todo-item__priority');
     await expect(prioritySpans).toHaveCount(3);
-    await expect(prioritySpans.nth(0)).toHaveClass(/todo-item__priority--high/);
+    await expect(prioritySpans.nth(0)).toHaveClass(/todo-item__priority--low/);
     await expect(prioritySpans.nth(1)).toHaveClass(/todo-item__priority--medium/);
-    await expect(prioritySpans.nth(2)).toHaveClass(/todo-item__priority--low/);
+    await expect(prioritySpans.nth(2)).toHaveClass(/todo-item__priority--high/);
   });
 
   // シナリオ: 優先度の変更はlocalStorageに保存され、リロード後も維持される
@@ -177,20 +177,20 @@ test.describe('Feature: 優先度（高・中・低）の設定と表示', () =>
   test('優先度の変更が他項目に影響しない', async ({ page }) => {
     await setupPage(page);
 
-    // Given: 優先度が「高」の ToDo A と 「中」の ToDo B が登録されている
-    await page.fill('#todoTitle', 'A');
-    await page.selectOption('#todoPriority', { value: 'high' });
-    await page.click('button[type="submit"]');
-
+    // Given: 優先度が「高」の ToDo A と 「中」の ToDo B が登録されている（B→Aの順で追加し、DOM順序を[A, B]に）
     await page.fill('#todoTitle', 'B');
     await page.selectOption('#todoPriority', { value: 'medium' });
+    await page.click('button[type="submit"]');
+
+    await page.fill('#todoTitle', 'A');
+    await page.selectOption('#todoPriority', { value: 'high' });
     await page.click('button[type="submit"]');
 
     const items = page.locator('.todo-item');
     await expect(items).toHaveCount(2);
 
-    // When: ToDo A の優先度を「低」に変更する
-    const priorityAEl = page.locator('.todo-item__priority').nth(0);
+    // When: ToDo A の優先度を「低」に変更する（DOMの先頭＝A）
+    const priorityAEl = page.locator('.todo-item').first().locator('[data-editable-priority]');
     await priorityAEl.click();
     const select = page.locator('.todo-item__priority-select');
     await select.selectOption({ value: 'low' });
@@ -204,7 +204,7 @@ test.describe('Feature: 優先度（高・中・低）の設定と表示', () =>
   test('ドラッグ&ドロップでも優先度が維持される', async ({ page }) => {
     await setupPage(page);
 
-    // Given: 優先度が「高」の ToDo A と 「低」の ToDo B が登録されている
+    // Given: 優先度が「高」の ToDo A と 「低」の ToDo B が登録されている（unshiftのためDOMは[B, A]）
     await page.fill('#todoTitle', 'A');
     await page.selectOption('#todoPriority', { value: 'high' });
     await page.click('button[type="submit"]');
@@ -216,8 +216,8 @@ test.describe('Feature: 優先度（高・中・低）の設定と表示', () =>
     const items = page.locator('.todo-item');
     await expect(items).toHaveCount(2);
 
-    // When: ToDo A を ToDo B の下にドラッグ&ドロップする（localStorage直接操作）
-    const aId = await page.locator('.todo-item').nth(0).getAttribute('data-id');
+    // When: ToDo A（DOM末尾）を ToDo B の下にドラッグ&ドロップする（localStorage直接操作）
+    const aId = await page.locator('.todo-item').nth(1).getAttribute('data-id');
     await page.evaluate(
       ({ aId }) => {
         const raw = localStorage.getItem('todos');
@@ -228,9 +228,9 @@ test.describe('Feature: 優先度（高・中・低）の設定と表示', () =>
         const fromIndex = data.items.findIndex((t: { id: string }) => t.id === aId);
         if (fromIndex === -1) return;
 
-        // Aを末尾に移動
+        // Aを先頭に移動（Bの上にドラッグ）
         const [moved] = data.items.splice(fromIndex, 1);
-        data.items.push(moved);
+        data.items.unshift(moved);
 
         localStorage.setItem('todos', JSON.stringify(data));
       },
@@ -242,13 +242,13 @@ test.describe('Feature: 優先度（高・中・低）の設定と表示', () =>
 
     // Then: 順序は入れ替わるが、各項目の優先度は変更されない
     const texts = page.locator('.todo-item__text');
-    await expect(texts.nth(0)).toContainText('B');
-    await expect(texts.nth(1)).toContainText('A');
+    await expect(texts.nth(0)).toContainText('A');
+    await expect(texts.nth(1)).toContainText('B');
 
     // 優先度が維持されていることを確認
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('todos')));
-    expect(stored.items[0].priority).toBe('low');   // Bは「低」のまま
-    expect(stored.items[1].priority).toBe('high');   // Aは「高」のまま
+    expect(stored.items[0].priority).toBe('high');   // Aは「高」のまま
+    expect(stored.items[1].priority).toBe('low');    // Bは「低」のまま
   });
 
   // シナリオ: 完了済みの項目でも優先度を変更できる

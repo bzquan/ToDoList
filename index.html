@@ -737,7 +737,7 @@
 
           const priority = prioritySelect ? prioritySelect.value : 'medium';
           const items = loadTodos();
-          items.push(createTodo(title, description, dueDate, priority));
+          items.unshift(createTodo(title, description, dueDate, priority));
           saveTodos(items);
           render();
 

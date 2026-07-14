@@ -27,14 +27,14 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
   test('ドラッグハンドルで順序を入れ替えられる', async ({ page }) => {
     await setupPage(page);
 
-    // Given: "A" と "B" の順でToDoが登録されている
+    // Given: "A" と "B" の順でToDoが登録されている（unshiftのためDOMは[B, A]）
     await page.fill('#todoTitle', 'A');
     await page.click('button[type="submit"]');
     await page.fill('#todoTitle', 'B');
     await page.click('button[type="submit"]');
 
-    // ドラッグ元のIDを取得
-    const draggedId = await page.locator('.todo-item').nth(0).getAttribute('data-id');
+    // ドラッグ元のIDを取得（DOMの末尾＝A）
+    const draggedId = await page.locator('.todo-item').nth(1).getAttribute('data-id');
 
     // When: "A" のドラッグハンドルを "B" の下にドラッグ&ドロップする
     // localStorage を直接操作して順序を入れ替え（実際のDPI操作の代わり）
@@ -48,9 +48,10 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
         const fromIndex = data.items.findIndex((t: { id: string }) => t.id === draggedId);
         if (fromIndex === -1) return;
 
-        // 項目Aを末尾に移動
+        // 項目Aを末尾に移動（=先頭に移動：Aは既に末尾にあるので実際には変化なし）
+        // AをBの前に移動する
         const [moved] = data.items.splice(fromIndex, 1);
-        data.items.push(moved);
+        data.items.unshift(moved);
 
         localStorage.setItem('todos', JSON.stringify(data));
       },
@@ -60,11 +61,11 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
     // 再描画
     await page.evaluate(() => window.render());
 
-    // Then: ToDoの順序が "B", "A" に入れ替わる
+    // Then: ToDoの順序が "A", "B" に入れ替わる（Aが先頭）
     const texts = page.locator('.todo-item__text');
     await expect(texts).toHaveCount(2);
-    await expect(texts.nth(0)).toContainText('B');
-    await expect(texts.nth(1)).toContainText('A');
+    await expect(texts.nth(0)).toContainText('A');
+    await expect(texts.nth(1)).toContainText('B');
   });
 
   // シナリオ: ドラッグ中の項目は視覚的に区別される
@@ -119,13 +120,13 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
   test('ドラッグ&ドロップの結果がlocalStorageに保存される', async ({ page }) => {
     await setupPage(page);
 
-    // Given: "A" と "B" の順でToDoが登録されている
+    // Given: "A" と "B" の順でToDoが登録されている（unshiftのためDOMは[B, A]）
     await page.fill('#todoTitle', 'A');
     await page.click('button[type="submit"]');
     await page.fill('#todoTitle', 'B');
     await page.click('button[type="submit"]');
 
-    // When: "A" を "B" の下にドラッグ&ドロップする（localStorage直接操作）
+    // When: "B"（DOM先頭）を "A" の下にドラッグ&ドロップする
     const draggedId = await page.locator('.todo-item').nth(0).getAttribute('data-id');
     await page.evaluate(
       ({ draggedId }) => {
@@ -148,18 +149,18 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
     // And: ページをリロードする
     await page.reload();
 
-    // Then: ToDoの順序が "B", "A" のまま維持される
+    // Then: ToDoの順序が "A", "B" のまま維持される（Bが末尾に移動した）
     const texts = page.locator('.todo-item__text');
     await expect(texts).toHaveCount(2);
-    await expect(texts.nth(0)).toContainText('B');
-    await expect(texts.nth(1)).toContainText('A');
+    await expect(texts.nth(0)).toContainText('A');
+    await expect(texts.nth(1)).toContainText('B');
   });
 
   // シナリオ: 3項目以上でも自由に並び替えられる
   test('3項目以上でも自由に並び替えられる', async ({ page }) => {
     await setupPage(page);
 
-    // Given: "A", "B", "C" の順でToDoが登録されている
+    // Given: "A", "B", "C" の順でToDoが登録されている（unshiftのためDOMは[C, B, A]）
     for (const title of ['A', 'B', 'C']) {
       await page.fill('#todoTitle', title);
       await page.click('button[type="submit"]');
@@ -168,35 +169,35 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
     const items = page.locator('.todo-item');
     await expect(items).toHaveCount(3);
 
-    // When: "C" を "A" と "B" の間にドラッグ&ドロップする（localStorage直接操作）
-    const cId = await page.locator('.todo-item').nth(2).getAttribute('data-id');
+    // When: "A"（DOM末尾）を "C" と "B" の間にドラッグ&ドロップする（localStorage直接操作）
+    const aId = await page.locator('.todo-item').nth(2).getAttribute('data-id');
     await page.evaluate(
-      ({ cId }) => {
+      ({ aId }) => {
         const raw = localStorage.getItem('todos');
         if (!raw) return;
         const data = JSON.parse(raw);
         if (!Array.isArray(data.items)) return;
 
-        const fromIndex = data.items.findIndex((t: { id: string }) => t.id === cId);
+        const fromIndex = data.items.findIndex((t: { id: string }) => t.id === aId);
         if (fromIndex === -1) return;
 
-        // Cを先頭に移動（AとBの間＝インデックス1）
+        // Aをインデックス1に移動（CとBの間）
         const [moved] = data.items.splice(fromIndex, 1);
         data.items.splice(1, 0, moved);
 
         localStorage.setItem('todos', JSON.stringify(data));
       },
-      { cId }
+      { aId }
     );
 
     // 再描画
     await page.evaluate(() => window.render());
 
-    // Then: ToDoの順序が "A", "C", "B" に入れ替わる
+    // Then: ToDoの順序が "C", "A", "B" に入れ替わる
     const texts = page.locator('.todo-item__text');
     await expect(texts).toHaveCount(3);
-    await expect(texts.nth(0)).toContainText('A');
-    await expect(texts.nth(1)).toContainText('C');
+    await expect(texts.nth(0)).toContainText('C');
+    await expect(texts.nth(1)).toContainText('A');
     await expect(texts.nth(2)).toContainText('B');
   });
 
@@ -204,7 +205,7 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
   test('ドラッグハンドルを上にドラッグして先頭に移動できる', async ({ page }) => {
     await setupPage(page);
 
-    // Given: "A", "B" の順でToDoが登録されている
+    // Given: "A", "B" の順でToDoが登録されている（unshiftのためDOMは[B, A]）
     for (const title of ['A', 'B']) {
       await page.fill('#todoTitle', title);
       await page.click('button[type="submit"]');
@@ -213,42 +214,42 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
     const items = page.locator('.todo-item');
     await expect(items).toHaveCount(2);
 
-    // When: "B" のドラッグハンドルを "A" の上にドラッグ&ドロップする（localStorage直接操作）
-    const bId = await page.locator('.todo-item').nth(1).getAttribute('data-id');
+    // When: "A"（DOM末尾）のドラッグハンドルを "B" の上にドラッグ&ドロップする（localStorage直接操作）
+    const aId = await page.locator('.todo-item').nth(1).getAttribute('data-id');
     await page.evaluate(
-      ({ bId }) => {
+      ({ aId }) => {
         const raw = localStorage.getItem('todos');
         if (!raw) return;
         const data = JSON.parse(raw);
         if (!Array.isArray(data.items)) return;
 
-        const fromIndex = data.items.findIndex((t: { id: string }) => t.id === bId);
+        const fromIndex = data.items.findIndex((t: { id: string }) => t.id === aId);
         if (fromIndex === -1) return;
 
-        // Bを先頭に移動
+        // Aを先頭に移動
         const [moved] = data.items.splice(fromIndex, 1);
         data.items.unshift(moved);
 
         localStorage.setItem('todos', JSON.stringify(data));
       },
-      { bId }
+      { aId }
     );
 
     // 再描画
     await page.evaluate(() => window.render());
 
-    // Then: ToDoの順序が "B", "A" に入れ替わる
+    // Then: ToDoの順序が "A", "B" に入れ替わる
     const texts = page.locator('.todo-item__text');
     await expect(texts).toHaveCount(2);
-    await expect(texts.nth(0)).toContainText('B');
-    await expect(texts.nth(1)).toContainText('A');
+    await expect(texts.nth(0)).toContainText('A');
+    await expect(texts.nth(1)).toContainText('B');
   });
 
   // シナリオ: ドロップして元の位置に戻してもデータは壊れない
   test('ドロップして元の位置に戻してもデータは壊れない', async ({ page }) => {
     await setupPage(page);
 
-    // Given: "A" と "B" の順でToDoが登録されている
+    // Given: "A" と "B" の順でToDoが登録されている（unshiftのためDOMは[B, A]）
     for (const title of ['A', 'B']) {
       await page.fill('#todoTitle', title);
       await page.click('button[type="submit"]');
@@ -261,11 +262,11 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
     // localStorageをそのままにして再描画だけ行う
     await page.evaluate(() => window.render());
 
-    // Then: ToDoの順序は "A", "B" のまま変わらない
+    // Then: ToDoの順序は "B", "A" のまま変わらない
     const texts = page.locator('.todo-item__text');
     await expect(texts).toHaveCount(2);
-    await expect(texts.nth(0)).toContainText('A');
-    await expect(texts.nth(1)).toContainText('B');
+    await expect(texts.nth(0)).toContainText('B');
+    await expect(texts.nth(1)).toContainText('A');
 
     // データが壊れていないことを確認
     const stored = await page.evaluate(() => localStorage.getItem('todos'));
@@ -277,7 +278,7 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
   test('ドラッグ操作中にEscapeキーでドラッグ状態がクリアされる', async ({ page }) => {
     await setupPage(page);
 
-    // Given: "A" と "B" の順でToDoが登録されている
+    // Given: "A" と "B" の順でToDoが登録されている（unshiftのためDOMは[B, A]）
     for (const title of ['A', 'B']) {
       await page.fill('#todoTitle', title);
       await page.click('button[type="submit"]');
@@ -298,57 +299,60 @@ test.describe('Feature: ドラッグ&ドロップによる並び替え', () => {
     const style = await firstItem.evaluate((el) => el.style.opacity);
     expect(style).toBe('');
     const texts = page.locator('.todo-item__text');
-    await expect(texts.nth(0)).toContainText('A');
-    await expect(texts.nth(1)).toContainText('B');
+    await expect(texts.nth(0)).toContainText('B');
+    await expect(texts.nth(1)).toContainText('A');
   });
 
   // シナリオ: 完了済みの項目もドラッグ&ドロップで並び替えできる
   test('完了済みの項目もドラッグ&ドロップで並び替えできる', async ({ page }) => {
     await setupPage(page);
 
-    // Given: "A"（完了済み）と "B" の順でToDoが登録されている
+    // Given: "A"（完了済み）と "B" の順でToDoが登録されている（unshiftのためDOMは[B, A]）
     for (const title of ['A', 'B']) {
       await page.fill('#todoTitle', title);
       await page.click('button[type="submit"]');
     }
-    await page.locator('.todo-item__checkbox').first().check();
+
+    // Aを完了状態にする（DOMの末尾＝A）
+    const checkbox = page.locator('.todo-item__checkbox').nth(1);
+    await checkbox.check();
 
     const items = page.locator('.todo-item');
     await expect(items).toHaveCount(2);
 
-    // When: "A" を "B" の下にドラッグ&ドロップする（localStorage直接操作）
-    const aId = await page.locator('.todo-item').nth(0).getAttribute('data-id');
+    // When: "B"（DOM先頭）を "A" の下にドラッグ&ドロップする（localStorage直接操作）
+    const bId = await page.locator('.todo-item').nth(0).getAttribute('data-id');
     await page.evaluate(
-      ({ aId }) => {
+      ({ bId }) => {
         const raw = localStorage.getItem('todos');
         if (!raw) return;
         const data = JSON.parse(raw);
         if (!Array.isArray(data.items)) return;
 
-        const fromIndex = data.items.findIndex((t: { id: string }) => t.id === aId);
+        const fromIndex = data.items.findIndex((t: { id: string }) => t.id === bId);
         if (fromIndex === -1) return;
 
-        // Aを末尾に移動
+        // Bを末尾に移動
         const [moved] = data.items.splice(fromIndex, 1);
         data.items.push(moved);
 
         localStorage.setItem('todos', JSON.stringify(data));
       },
-      { aId }
+      { bId }
     );
 
     // 再描画
     await page.evaluate(() => window.render());
 
-    // Then: ToDoの順序が "B", "A" に入れ替わる
+    // Then: ToDoの順序が "A", "B" に入れ替わる
     const texts = page.locator('.todo-item__text');
     await expect(texts).toHaveCount(2);
-    await expect(texts.nth(0)).toContainText('B');
-    await expect(texts.nth(1)).toContainText('A');
+    await expect(texts.nth(0)).toContainText('A');
+    await expect(texts.nth(1)).toContainText('B');
 
-    // And: Aは依然として完了状態である
-    const checkbox = page.locator('.todo-item__checkbox').nth(1);
-    await expect(checkbox).toBeChecked();
+    // And: Aは依然として完了状態である（DOMの先頭＝A）
+    const checkboxAfter = page.locator('.todo-item__checkbox').nth(0);
+    await expect(checkboxAfter).toBeChecked();
   });
 
   // シナリオ: 項目が1つのときもドラッグハンドルが表示される

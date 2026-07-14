@@ -139,11 +139,11 @@ test.describe('Feature: ToDoの基本CRUD操作', () => {
     await page.fill('#todoTitle', '最初に追加');
     await page.click('button[type="submit"]');
 
-    // Then: 一覧に "後から追加" と "最初に追加" が表示される（追加順）
+    // Then: 新規項目が最上部（先頭）に表示される（unshiftのためDOMは[最初に追加, 後から追加]）
     const texts = page.locator('.todo-item__text');
     await expect(texts).toHaveCount(2);
-    await expect(texts.nth(0)).toContainText('後から追加');
-    await expect(texts.nth(1)).toContainText('最初に追加');
+    await expect(texts.nth(0)).toContainText('最初に追加');
+    await expect(texts.nth(1)).toContainText('後から追加');
   });
 
   // シナリオ: ToDoが空のとき「ToDoがありません」メッセージが表示される

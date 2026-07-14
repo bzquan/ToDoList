@@ -51,9 +51,9 @@ test.describe('ToDo 基本機能', () => {
 
     const items = page.locator('.todo-item .todo-item__text');
     await expect(items).toHaveCount(2);
-    // 追加順に描画（localStorage の配列順）
-    await expect(items.nth(0)).toContainText('項目A');
-    await expect(items.nth(1)).toContainText('項目B');
+    // 新規項目が先頭に来る（unshiftのためDOMは[項目B, 項目A]）
+    await expect(items.nth(0)).toContainText('項目B');
+    await expect(items.nth(1)).toContainText('項目A');
   });
 
   test('localStorage に保存され、再読み込み後も表示される', async ({ page }) => {

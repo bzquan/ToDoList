@@ -262,8 +262,9 @@ test.describe('Feature: 期限日付の設定・変更・削除', () => {
   test('今日が期限の項目は期限切れとして強調されない', async ({ page }) => {
     await setupPage(page);
 
-    // Given: 今日の日付が期限に設定されたToDoがある
-    const today = new Date().toISOString().split('T')[0];
+    // Given: 今日の日付が期限に設定されたToDoがある（ローカル日付を使用）
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     await page.fill('#todoTitle', '今日の期限');
     await page.fill('#todoDueDate', today);
     await page.click('button[type="submit"]');
